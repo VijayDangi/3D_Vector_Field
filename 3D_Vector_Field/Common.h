@@ -15,29 +15,7 @@
 #include <imgui/imgui_internal.h>
 
 #include "include/ShaderProgram.h"
-#include "include/TextureLoading.h"
 #include "include/LogMacro.h"
-
-#define DELETE_BUFFER( vbo) \
-    if(vbo)  \
-    {   \
-        glDeleteBuffers( 1, &vbo); \
-        vbo = 0; \
-    }
-
-#define DELETE_VERTEX_ARRAY( vao) \
-    if(vao)  \
-    {   \
-        glDeleteVertexArrays( 1, &vao); \
-        vao = 0; \
-    }
-
-#define DELETE_TEXTURE( tex) \
-    if(tex)  \
-    {   \
-        glDeleteTextures( 1, &tex); \
-        tex = 0; \
-    }
 
 // Single Vertex Attributes/Properties
 enum EVertexAttributeIndex

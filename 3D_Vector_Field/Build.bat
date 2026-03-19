@@ -83,10 +83,7 @@ REM =================================================
 set SOURCES=^
  Main.cpp ^
  OGLApplication.cpp ^
- source\Geometry.cpp ^
- source\OBJModel.cpp ^
  source\ShaderProgram.cpp ^
- source\TextureLoading.cpp ^
  third_party\imgui\imgui.cpp ^
  third_party\imgui\imgui_draw.cpp ^
  third_party\imgui\imgui_impl_opengl3.cpp ^

@@ -810,7 +810,7 @@ bool Initialize(void)
     }
 #endif
 
-    if(bIsDebugOpenGLContext && !InitializeImGUI(ghwnd))
+    if(!InitializeImGUI(ghwnd))
     {
         LogError("InitializeImGUI() Failed.");
         DestroyWindow( ghwnd);
@@ -850,7 +850,6 @@ void Display(double dt)
     OglApplication::Render(dt);
 
     // ImGui Rendering
-    if(bIsDebugOpenGLContext)
     {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplWin32_NewFrame();

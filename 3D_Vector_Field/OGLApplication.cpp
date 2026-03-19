@@ -72,7 +72,7 @@ namespace OglApplication {
     //////////
     const int VECTOR_FIELD_SIZE = 64;
     const float VECTOR_FIELD_CENTER = 64 * 0.5f;
-    const int MAX_VELOCITY_FIELD_TYPE = 5;
+    const int MAX_VELOCITY_FIELD_TYPE = 2;
     int currentVelocityFieldType = 0;
     GLuint vectorFieldTexture[MAX_VELOCITY_FIELD_TYPE] = {0};
 
@@ -88,49 +88,6 @@ namespace OglApplication {
     {
         //code
         return min + GetRandomValue() * (max - min);
-    }
-
-    glm::vec3 getNoisePotential(glm::vec3 p) {
-        // We need 3 distinct noise values. We can get this by sampling the same 
-        // noise function but offsetting the coordinates drastically.
-        glm::vec3 offset1(123.4f, 291.2f, -45.1f);
-        glm::vec3 offset2(-98.3f, 44.5f, 212.8f);
-
-        float nx = glm::simplex(p);
-        float ny = glm::simplex(p + offset1);
-        float nz = glm::simplex(p + offset2);
-
-        return glm::vec3(nx, ny, nz);
-    }
-
-    glm::vec3 computeCurl(glm::vec3 p) {
-        float epsilon = 0.01f; // A small step size for the derivative
-
-        // Step vectors for each axis
-        glm::vec3 dx(epsilon, 0.0f, 0.0f);
-        glm::vec3 dy(0.0f, epsilon, 0.0f);
-        glm::vec3 dz(0.0f, 0.0f, epsilon);
-
-        // Sample the potential field along the X axis
-        glm::vec3 p_x0 = getNoisePotential(p - dx);
-        glm::vec3 p_x1 = getNoisePotential(p + dx);
-
-        // Sample along the Y axis
-        glm::vec3 p_y0 = getNoisePotential(p - dy);
-        glm::vec3 p_y1 = getNoisePotential(p + dy);
-
-        // Sample along the Z axis
-        glm::vec3 p_z0 = getNoisePotential(p - dz);
-        glm::vec3 p_z1 = getNoisePotential(p + dz);
-
-        // Calculate the partial derivatives
-        float x = (p_y1.z - p_y0.z) - (p_z1.y - p_z0.y);
-        float y = (p_z1.x - p_z0.x) - (p_x1.z - p_x0.z);
-        float z = (p_x1.y - p_x0.y) - (p_y1.x - p_y0.x);
-
-        // Divide by 2 * epsilon to complete the central difference formula
-        float divisor = 1.0f / (2.0f * epsilon);
-        return glm::vec3(x, y, z) * divisor;
     }
 
     glm::vec3 getLorenzVelocity(glm::vec3 pos) {
@@ -155,9 +112,6 @@ namespace OglApplication {
         // code
         std::vector<glm::vec3> vectorFieldData0(VECTOR_FIELD_SIZE * VECTOR_FIELD_SIZE * VECTOR_FIELD_SIZE);
         std::vector<glm::vec3> vectorFieldData1(VECTOR_FIELD_SIZE * VECTOR_FIELD_SIZE * VECTOR_FIELD_SIZE);
-        std::vector<glm::vec3> vectorFieldData2(VECTOR_FIELD_SIZE * VECTOR_FIELD_SIZE * VECTOR_FIELD_SIZE);
-        std::vector<glm::vec3> vectorFieldData3(VECTOR_FIELD_SIZE * VECTOR_FIELD_SIZE * VECTOR_FIELD_SIZE);
-        std::vector<glm::vec3> vectorFieldData4(VECTOR_FIELD_SIZE * VECTOR_FIELD_SIZE * VECTOR_FIELD_SIZE);
 
         for(int z = 0; z < VECTOR_FIELD_SIZE; ++z)
         {
@@ -185,27 +139,6 @@ namespace OglApplication {
 
                         // 1
                     {
-                        float strength = 1.0f;
-                        float frequency = 0.25f;
-
-                        glm::vec3 velocity;
-                        velocity.x = -strength * sin(frequency * py);
-                        velocity.y = strength * cos(frequency * px);
-                        velocity.z = strength * sin(frequency * pz);
-                        vectorFieldData1[index] = velocity;
-                    }
-
-                        // 2
-                    {
-                        glm::vec3 velocity;
-                        velocity.x = sin(py * 0.5) * cos(pz * 0.5);
-                        velocity.y = sin(pz * 0.5) * cos(px * 0.5);
-                        velocity.z = sin(px * 0.5) * cos(py * 0.5);
-                        vectorFieldData2[index] = velocity;
-                    }
-
-                        // 3
-                    {
                         // We scale X and Y by 3, and map Z from [-10, 10] to [0, 50]
                         glm::vec3 lorenzSpacePos;
                         lorenzSpacePos.x = px * 2.5f; 
@@ -215,12 +148,7 @@ namespace OglApplication {
                         glm::vec3 velocity = getLorenzVelocity(lorenzSpacePos);
                         velocity *= 0.05f;
 
-                        vectorFieldData3[index] = velocity;
-                    }
-
-                        // 4
-                    {
-                        vectorFieldData4[index] = computeCurl(glm::vec3(px, py, pz) * 0.2f);
+                        vectorFieldData1[index] = velocity;
                     }
                 }
             }
@@ -256,54 +184,6 @@ namespace OglApplication {
             glTexParameterf(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
             glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB32F, VECTOR_FIELD_SIZE, VECTOR_FIELD_SIZE, VECTOR_FIELD_SIZE, 0, GL_RGB, GL_FLOAT, &vectorFieldData1[0][0]);
-
-            glBindTexture(GL_TEXTURE_3D, 0);
-        }
-
-            // 2
-        {
-            glBindTexture(GL_TEXTURE_3D, vectorFieldTexture[2]);
-
-            glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-            glTexParameterf(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameterf(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glTexParameterf(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-            glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB32F, VECTOR_FIELD_SIZE, VECTOR_FIELD_SIZE, VECTOR_FIELD_SIZE, 0, GL_RGB, GL_FLOAT, &vectorFieldData2[0][0]);
-
-            glBindTexture(GL_TEXTURE_3D, 0);
-        }
-
-            // 3
-        {
-            glBindTexture(GL_TEXTURE_3D, vectorFieldTexture[3]);
-
-            glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-            glTexParameterf(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameterf(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glTexParameterf(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-            glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB32F, VECTOR_FIELD_SIZE, VECTOR_FIELD_SIZE, VECTOR_FIELD_SIZE, 0, GL_RGB, GL_FLOAT, &vectorFieldData3[0][0]);
-
-            glBindTexture(GL_TEXTURE_3D, 0);
-        }
-
-            // 4
-        {
-            glBindTexture(GL_TEXTURE_3D, vectorFieldTexture[4]);
-
-            glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-            glTexParameterf(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameterf(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glTexParameterf(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-            glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB32F, VECTOR_FIELD_SIZE, VECTOR_FIELD_SIZE, VECTOR_FIELD_SIZE, 0, GL_RGB, GL_FLOAT, &vectorFieldData4[0][0]);
 
             glBindTexture(GL_TEXTURE_3D, 0);
         }
