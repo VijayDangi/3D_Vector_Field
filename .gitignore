@@ -1,0 +1,14 @@
+**/build/**
+*.dll
+
+!**/third_party/**
+
+*.log
+log.txt
+
+*.res
+
+App.exe
+bkp/**
+
+**/.vs**
