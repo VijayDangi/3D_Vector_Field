@@ -166,7 +166,7 @@ copy "%OBJDIR%\%OutputFileName%" .
 echo.
 echo %GREEN%===== BUILD FINISHED SUCCESSFULLY =====%RESET%
 
-Copy third_party\glew\lib\Release\x64\glew32.dll .
+Copy third_party\glew\bin\Release\x64\glew32.dll .
 goto :eof
 
 :BUILD_FAILED
