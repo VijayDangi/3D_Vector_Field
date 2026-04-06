@@ -75,15 +75,15 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInsatnce, LPSTR szCmdLin
         LogInfo("Log File Opened...");
     }
 
-    if(!CreateDummyWindowToInitializeOpenGLAPIs(hInstance))
-    {
-        LogError("CreateDummyWindowToInitializeOpenGLAPIs() Failed.");
-        return( EXIT_FAILURE);
-    }
-
     if(!CreateMainWindow(hInstance))
     {
         LogError("CreateMainWindow() Failed.");
+        return( EXIT_FAILURE);
+    }
+
+    if(!CreateDummyWindowToInitializeOpenGLAPIs(hInstance))
+    {
+        LogError("CreateDummyWindowToInitializeOpenGLAPIs() Failed.");
         return( EXIT_FAILURE);
     }
     
