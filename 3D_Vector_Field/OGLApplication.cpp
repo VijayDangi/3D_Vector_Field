@@ -76,6 +76,10 @@ namespace OglApplication {
     int currentVelocityFieldType = 0;
     GLuint vectorFieldTexture[MAX_VELOCITY_FIELD_TYPE] = {0};
 
+    bool startSimulation = false;
+    int numParticles = 0;
+    int frameCount = 0;
+
     // GetRandomValue() : Generate values in [0, 1]
     float GetRandomValue()
     {
@@ -313,33 +317,64 @@ namespace OglApplication {
     {
         ImGuiIO &io = ImGui::GetIO();
 
-        ImGui::Begin("Controls");
-            ImGui::Text( "Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+        if(startSimulation)
+        {
+            ImGui::Begin("Controls");
+                ImGui::Text( "Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
 
-            ImGui::NewLine();
+                ImGui::NewLine();
 
-            ImGui::Text( "Camera Position: [ %f, %f, %f]", gFPSCamera.vPosition[0], gFPSCamera.vPosition[1], gFPSCamera.vPosition[2]);
-            ImGui::Text( "Camera Pitch %f, Yaw: %f", gFPSCamera.fPitch, gFPSCamera.fYaw);
-            ImGui::DragFloat( "Camera Movement Speed", &gFPSCamera.movementSpeed, 0.01f, 0.0f, 30.0f);
-            ImGui::DragFloat( "Camera Rotate Speed", &gFPSCamera.mouseSensitivity, 0.01f, 0.0f, 20.0f);
-            ImGui::NewLine();
+                ImGui::Text( "Camera Position: [ %f, %f, %f]", gFPSCamera.vPosition[0], gFPSCamera.vPosition[1], gFPSCamera.vPosition[2]);
+                ImGui::Text( "Camera Pitch %f, Yaw: %f", gFPSCamera.fPitch, gFPSCamera.fYaw);
+                ImGui::DragFloat( "Camera Movement Speed", &gFPSCamera.movementSpeed, 0.01f, 0.0f, 30.0f);
+                ImGui::DragFloat( "Camera Rotate Speed", &gFPSCamera.mouseSensitivity, 0.01f, 0.0f, 20.0f);
+                ImGui::NewLine();
 
-            ImGui::Text("Delta Time: %f", deltaTime);
-            ImGui::Text("Elapsed Time: %f", totalTime);
+                ImGui::Text("Delta Time: %f", deltaTime);
+                ImGui::Text("Elapsed Time: %f", totalTime);
 
-            ImGui::NewLine();
-            ImGui::SliderInt("Velocity Field Type", &currentVelocityFieldType, 0, MAX_VELOCITY_FIELD_TYPE - 1);
-            ImGui::SliderFloat("Particle Size", &particleSize, 0.5f, 20.0f);
+                ImGui::NewLine();
+                ImGui::SliderInt("Velocity Field Type", &currentVelocityFieldType, 0, MAX_VELOCITY_FIELD_TYPE - 1);
+                ImGui::SliderFloat("Particle Size", &particleSize, 0.5f, 20.0f);
 
-            ImGui::NewLine();
-            ImGui::Checkbox("Show Infinite Grid", &gShowInfiniteGrid);
-            ImGui::Checkbox("Pause Simulation", &pauseSimulation);
-        ImGui::End();
+                ImGui::NewLine();
+                ImGui::Checkbox("Show Infinite Grid", &gShowInfiniteGrid);
+                ImGui::Checkbox("Pause Simulation", &pauseSimulation);
+
+                ImGui::NewLine();
+                ImGui::Text("Particle Count: %d", numParticles);
+            ImGui::End();
+        }
+        else
+        {
+            ImVec2 textSize = ImGui::CalcTextSize("Press the button below to start the simulation.");
+            textSize.x += 40.0f; // Add some padding
+
+            ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f), ImGuiCond_Once, ImVec2(0.5f, 0.5f));
+            ImGui::SetNextWindowSize(ImVec2(textSize.x, 100.0f));
+
+            ImGui::Begin("Startup Message", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove);
+                ImGui::SetCursorPosX(20.0f);
+                ImGui::Text("Press the button below to start the simulation.");
+
+                ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 20.0f);
+                ImGui::SetCursorPosX((textSize.x - ImGui::CalcTextSize("Start Simulation").x) * 0.5f);
+                if(ImGui::Button("Start Simulation"))
+                {
+                    startSimulation = true;
+                }
+            ImGui::End();
+        }
     }
 
     void Render(double deltaTime)
     {
         // code
+        if(!startSimulation)
+        {
+            return;
+        }
+
         Update( deltaTime);
 
         // Rendering code
@@ -388,8 +423,19 @@ namespace OglApplication {
         glUniformMatrix4fv(glGetUniformLocation(renderShaderProgram, "u_viewProjMatrix"), 1, GL_FALSE, &mvp[0][0]);
         glUniform1f(glGetUniformLocation(renderShaderProgram, "u_particleSize"), particleSize);
         glBindVertexArray(renderVAO[writeIndex]);
-        glDrawArrays(GL_POINTS, 0, NUM_PARTICLES);
+        glDrawArrays(GL_POINTS, 0, numParticles);
+        glEnable(GL_POINT_SMOOTH);
         glBindVertexArray(0);
+
+        if( numParticles < NUM_PARTICLES)
+        {
+            numParticles += 50;
+            if(numParticles > NUM_PARTICLES)
+            {
+                numParticles = NUM_PARTICLES;
+            }
+        }
+
 
         // Swap read and write buffers for the next frame
         if(!pauseSimulation)
